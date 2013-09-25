@@ -1,19 +1,16 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String
 from app import db
 
-engine = create_engine('sqlite:///database.db', echo=True)
-db_session = scoped_session(sessionmaker(autocommit=False,
-                                         autoflush=False,
-                                         bind=engine))
+engine = create_engine('postgresql+psycopg2://brent:weasel@localhost/flaskb')
+
+db.session = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
+
 Base = declarative_base()
-Base.query = db_session.query_property()
+Base.query = db.session.query_property()
 
-# Set your classes here.
 
-'''
 class User(Base):
     __tablename__ = 'Users'
 
@@ -25,7 +22,14 @@ class User(Base):
     def __init__(self, name=None, password=None):
         self.name = name
         self.password = password
-'''
+
+
+class Post(db.Model):
+    __tablename__ = 'Posts'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.Unicode(120))
+    text = db.Column(db.UnicodeText, nullable=False)
+
 
 # Create tables.
 Base.metadata.create_all(bind=engine)

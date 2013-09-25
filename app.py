@@ -1,8 +1,10 @@
 #----------------------------------------------------------------------------#
 # Imports.
 #----------------------------------------------------------------------------#
+from functools import wraps
 
-from flask import * # do not use '*'; actually input the dependencies.
+from flask import app, render_template, Flask, session, redirect, flash, request, url_for
+
 from flask.ext.sqlalchemy import SQLAlchemy
 import logging
 from logging import Formatter, FileHandler
@@ -12,19 +14,18 @@ from forms import *
 # App Config.
 #----------------------------------------------------------------------------#
 
+
 app = Flask(__name__)
 app.config.from_object('config')
-#db = SQLAlchemy(app)
+db = SQLAlchemy(app)
 
 # Automatically tear down SQLAlchemy.
-'''
+
 @app.teardown_request
 def shutdown_session(exception=None):
-    db_session.remove()
-'''
+    db.session.remove()
 
-# Login required decorator.
-'''
+
 def login_required(test):
     @wraps(test)
     def wrap(*args, **kwargs):
@@ -34,7 +35,13 @@ def login_required(test):
             flash('You need to login first.')
             return redirect(url_for('login'))
     return wrap
-'''
+
+
+def do_login(request):
+    username = request.form['name']
+    password = request.form['password']
+    return True
+
 #----------------------------------------------------------------------------#
 # Controllers.
 #----------------------------------------------------------------------------#
@@ -47,10 +54,16 @@ def home():
 def about():
     return render_template('pages/placeholder.about.html')
 
-@app.route('/login')
+
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    form = LoginForm(request.form)
-    return render_template('forms/login.html', form = form)
+    if request.method == 'POST':
+        logged_in = do_login(request)
+        if logged_in:
+            return redirect('/')
+    if request.method == 'GET':
+        form = LoginForm(request.form)
+        return render_template('forms/login.html', form=form)
 
 @app.route('/register')
 def register():
@@ -89,10 +102,3 @@ if not app.debug:
 # Default port:
 if __name__ == '__main__':
     app.run()
-
-# Or specify port manually:
-'''
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
-'''
